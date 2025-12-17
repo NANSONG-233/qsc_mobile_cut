@@ -1,4 +1,4 @@
-export const API_URL = 'http://localhost:3000';
+export const API_URL = 'http://localhost:8080';
 
 export const login = async (username: string, password: string): Promise<{ success: boolean; message?: string }> => {
   try {

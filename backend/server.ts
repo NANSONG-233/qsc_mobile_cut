@@ -1,7 +1,11 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors'
-import { ZJUAM ,ZDBK} from 'login-zju';
+import { ZJUAM ,ZDBK,YQFKGL} from 'login-zju';
 import { error } from 'console';
+import QRcode from 'qrcode'
+
+
+
 
 const originalConsoleLog = console.log;
 
@@ -60,7 +64,7 @@ console.error = function(...args) {
 
 
 
-
+let am:ZJUAM
 
 
 
@@ -74,6 +78,9 @@ app.register(cors,{
 
 });
 
+
+
+
 app.post('/login',async(req,reply)=>{
     type LoginPayload={
         username:string;
@@ -84,7 +91,7 @@ app.post('/login',async(req,reply)=>{
     const password=data.password;
     
 
-    var am= new ZJUAM(username ,password);
+    am= new ZJUAM(username ,password);
     const result = await am.fetch("https://zjuam.zju.edu.cn/path")
     if(capturedErrors[capturedErrors.length-1]?.includes('mes')){
         reply.code(400)
@@ -94,15 +101,38 @@ app.post('/login',async(req,reply)=>{
     }    
     else if(capturedLogs[capturedLogs.length-1]?.includes('suc')){
         reply.code(201)
-        console.log(233)
         reply.header('content-type','application/json');
         return reply.send({message:'success'})
         
 
     }
-        
+})
 
 
+
+
+
+
+
+app.get('/qrcode',async(req,reply)=>{
+    
+    const yqfgl=new YQFKGL(am)
+    const res1=await yqfgl.fetch("https://yqfkgl.zju.edu.cn/_web/_customizes/ykt/index3.jsp")
+    const res2=await yqfgl.fetch("https://yqfkgl.zju.edu.cn/user/api/qrcode/access1.rst")
+    const access = await res2.json()
+    const qrData=access.result.data
+    if(!qrData)
+    {
+        return reply.status(500).send({error:'fail to get qrcode'})
+    }
+    const qrBuffer = await QRcode.toBuffer(qrData)
+    reply
+    .type('image/png')
+    .header('cache-control','no-cache')
+    .send(qrBuffer)
+    
+
+    
 
 
 })
@@ -110,8 +140,22 @@ app.post('/login',async(req,reply)=>{
 
 
 
-app.listen({ port: 3000 }).then(() => {
-    console.log("Server started on http://localhost:3000");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+app.listen({ port: 8080 }).then(() => {
+    console.log("Server started on http://localhost:8080");
     console.log("Waiting for requests...");
 });
 
